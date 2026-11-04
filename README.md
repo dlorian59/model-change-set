@@ -8,6 +8,8 @@
 
 [**Usage guide: capabilities, examples and expected results →**](docs/0.3.0/en.md)
 
+[**Complete API, configuration and error reference →**](docs/0.3.0/reference.en.md)
+
 [![CI](https://github.com/59Alex/model-change-set/actions/workflows/ci.yml/badge.svg)](https://github.com/59Alex/model-change-set/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-64748b.svg)](LICENSE)
 
@@ -208,6 +210,8 @@ trade-offs. Contributions should include a regression test for any changed contr
 **Java:** [17](docs/0.3.0/java.ru.md#java-17) · [21](docs/0.3.0/java.ru.md#java-21) · [25](docs/0.3.0/java.ru.md#java-25) · [27](docs/0.3.0/java.ru.md#java-27)
 
 [**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
+
+[**Полный справочник API, настроек и ошибок →**](docs/0.3.0/reference.ru.md)
 
 Сравнивайте снимки моделей по стабильному ключу и явно заданным правилам полей. Получайте упорядоченные добавления, удаления и изменения либо обрабатывайте отсортированные источники по одному изменению.
 

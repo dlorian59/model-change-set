@@ -2,6 +2,8 @@
 
 [← Usage guide](en.md) · [Versions](../index.md) · [README](../../README.md) · [Русский](spring.ru.md)
 
+[Complete API/configuration/error reference](reference.en.md)
+
 ## Situation
 
 An operations screen compares deployed worker policies with a proposed configuration.

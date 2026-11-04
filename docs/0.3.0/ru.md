@@ -2,6 +2,8 @@
 
 [← Back to documentation and versions / Назад к документации и версиям](../index.md)
 
+[Полный справочник API/настроек/ошибок](reference.ru.md)
+
 [English](en.md) · [Русский](ru.md)
 
 [Версии](../index.md) · [README](../../README.md) · [Возможности Java](java.ru.md)

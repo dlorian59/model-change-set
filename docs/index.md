@@ -19,3 +19,5 @@ The current guides explain each capability with a code example, expected behavio
 [English README](../README.md) · [Русский README](../README.md)
 
 [← Back to repository README / Назад к README библиотеки](../README.md)
+
+[Complete reference · EN](0.3.0/reference.en.md) · [Полный справочник · RU](0.3.0/reference.ru.md)

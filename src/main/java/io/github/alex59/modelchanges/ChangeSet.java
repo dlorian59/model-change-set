@@ -24,15 +24,15 @@ public record ChangeSet<T, K>(List<Change<T, K>> changes) {
     public boolean isEmpty() { return changes.isEmpty(); }
 
     /** Selects additions.
-     * @return added models in key order */
+     * @return added models in retained order (key order for ModelDiffer results) */
     public List<Change<T, K>> added() { return ofType(ChangeType.ADDED); }
 
     /** Selects removals.
-     * @return removed models in key order */
+     * @return removed models in retained order (key order for ModelDiffer results) */
     public List<Change<T, K>> removed() { return ofType(ChangeType.REMOVED); }
 
     /** Selects modifications.
-     * @return modified models in key order */
+     * @return modified models in retained order (key order for ModelDiffer results) */
     public List<Change<T, K>> modified() { return ofType(ChangeType.MODIFIED); }
 
     private List<Change<T, K>> ofType(ChangeType type) {
