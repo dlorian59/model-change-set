@@ -22,6 +22,12 @@ as a non-LTS runtime. No runtime dependencies, reflection, annotations, or frame
 setup. Version 0.3.0 uses the Java 17 API and bytecode baseline; see
 [Java support and migration](docs/JAVA-SUPPORT.md).
 
+## Spring: review a configuration rollout
+
+[Practical guide](docs/0.3.0/spring.en.md): register a typed `ModelDiffer` bean, compare
+current and desired worker settings, and inspect changes before applying them. Run
+`./gradlew runSpringExample`. Spring belongs only to the example; the core stays independent.
+
 ## Try it
 
 With a full JDK 17, 21, 25, or 27 installed:
@@ -204,6 +210,13 @@ trade-offs. Contributions should include a regression test for any changed contr
 [**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
 
 Сравнивайте снимки моделей по стабильному ключу и явно заданным правилам полей. Получайте упорядоченные добавления, удаления и изменения либо обрабатывайте отсортированные источники по одному изменению.
+
+## Spring: проверка обновления конфигурации
+
+[Практическое руководство](docs/0.3.0/spring.ru.md): создайте типизированный bean
+`ModelDiffer`, сравните текущие и желаемые настройки обработчиков и изучите изменения
+перед применением. Запуск: `./gradlew runSpringExample`. Spring подключён только
+к примеру; основная библиотека сохраняет независимость.
 
 ## Попробовать
 

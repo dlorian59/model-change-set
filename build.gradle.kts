@@ -82,3 +82,19 @@ tasks.withType<JavaExec>().configureEach {
         languageVersion.set(JavaLanguageVersion.of(testJavaVersion))
     })
 }
+
+// Spring is confined to this optional example; the published core has no runtime dependencies.
+val springExamples = sourceSets.create("springExamples")
+springExamples.compileClasspath += sourceSets.main.get().output
+springExamples.runtimeClasspath += sourceSets.main.get().output
+dependencies {
+    add(springExamples.implementationConfigurationName, platform("org.springframework.boot:spring-boot-dependencies:4.1.2"))
+    add(springExamples.implementationConfigurationName, "org.springframework:spring-context")
+}
+val runSpringExample = tasks.register<JavaExec>("runSpringExample") {
+    group = "verification"
+    description = "Preview a configuration synchronization using an injected typed ModelDiffer"
+    classpath = springExamples.runtimeClasspath
+    mainClass.set("io.github.alex59.modelchanges.examples.spring.ConfigurationSyncApplication")
+}
+tasks.check { dependsOn(runSpringExample) }

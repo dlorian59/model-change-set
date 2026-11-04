@@ -9,13 +9,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Self-contained documentation examples for model-change-set 0.3.0, Java 17+. */
+// Run every documented scenario against the core library on Java 17+.
+// Выполняем все сценарии руководства с основной библиотекой на Java 17+.
 public final class Example {
     private Example() {}
 
     record Column(String key, String type, boolean nullable) {}
 
     public static void main(String[] args) {
+        // Choose identity and the business fields included in a schema review.
+        // Выбираем ключ и значимые поля для проверки изменений схемы.
         List<Field<Column, ?>> fields = List.of(
             Field.of("type", Column::type),
             Field.of("nullable", Column::nullable)
@@ -41,6 +44,8 @@ public final class Example {
             ));
         });
 
+        // Input order is irrelevant; the comparator defines report order.
+        // Порядок входа не важен; порядок отчёта задаёт компаратор.
         var reorderedBefore = new ArrayList<>(before);
         Collections.reverse(reorderedBefore);
         System.out.println("same report=" + changes.equals(
@@ -52,6 +57,8 @@ public final class Example {
         System.out.println("descending=" + reverseDiffer.compare(before, after)
             .changes().stream().map(Change::key).toList());
 
+        // A price policy ignores decimal scale but explicitly handles null.
+        // Правило цены игнорирует масштаб десятичного числа и явно обрабатывает null.
         record Price(String key, BigDecimal amount) {}
         var amount = Field.<Price, BigDecimal>comparing(
             "amount", Price::amount,
@@ -73,6 +80,8 @@ public final class Example {
         System.out.println(priceChange.name() + ": "
             + priceChange.before() + " -> " + priceChange.after());
 
+        // A missing model and a present model with a null field are different events.
+        // Отсутствующая модель и модель с пустым полем null — разные события.
         var nullToEmpty = differ.compare(
             List.of(new Column("note", null, true)),
             List.of(new Column("note", "", true))
@@ -83,6 +92,8 @@ public final class Example {
         System.out.println("null-to-empty modified=" + nullToEmpty.modified().size());
         System.out.println("absent-to-null added=" + absentToNull.added().size());
 
+        // Default deep equality compares array contents without custom adapters.
+        // Стандартное глубокое равенство сравнивает содержимое массивов без адаптеров.
         record Blob(String key, byte[] bytes) {}
         var blobDiffer = ModelDiffer.<Blob, String>of(
             Blob::key, Comparator.naturalOrder(), List.of(Field.of("bytes", Blob::bytes))
@@ -92,11 +103,15 @@ public final class Example {
             List.of(new Blob("blob", new byte[] {1, 2}))
         ).isEmpty());
 
+        // Filter an immutable report into additions, removals and modifications.
+        // Разделяем неизменяемый отчёт на добавления, удаления и модификации.
         System.out.println("added=" + changes.added().stream().map(Change::key).toList());
         System.out.println("removed=" + changes.removed().stream().map(Change::key).toList());
         System.out.println("modified=" + changes.modified().stream().map(Change::key).toList());
         System.out.println("has changes=" + !changes.isEmpty());
 
+        // An empty projection compares membership; a subset ignores unrelated fields.
+        // Пустой набор полей сравнивает состав; подмножество игнорирует остальные поля.
         var membershipOnly = ModelDiffer.<Column, String>of(
             Column::key, Comparator.naturalOrder(), List.of()
         );
@@ -115,6 +130,8 @@ public final class Example {
             List.of(new Column("id", "int", false))
         ).isEmpty());
 
+        // Sorted inputs can emit changes incrementally without indexing both snapshots.
+        // Отсортированные входы выдают изменения последовательно без индексации снимков.
         var emitted = new ArrayList<Change<Column, String>>();
         differ.compareSorted(
             before.stream().sorted(Comparator.comparing(Column::key)).iterator(),
@@ -123,6 +140,8 @@ public final class Example {
         );
         System.out.println("same merge=" + changes.equals(new ChangeSet<>(emitted)));
 
+        // A late ordering error leaves an emitted prefix; the caller handles recovery.
+        // Поздняя ошибка порядка оставляет выданный префикс; восстановление выполняет вызывающий код.
         var prefix = new ArrayList<String>();
         try {
             differ.compareSorted(
@@ -151,6 +170,8 @@ public final class Example {
         } catch (NullPointerException failure) {
             System.out.println(failure.getMessage());
         }
+        // A comparator collision is an error, not an implicit identity merge.
+        // Коллизия компаратора — ошибка, а не неявное объединение ключей.
         var insensitive = ModelDiffer.<Column, String>of(
             Column::key, String.CASE_INSENSITIVE_ORDER, fields
         );
@@ -168,6 +189,8 @@ public final class Example {
             System.out.println("result is unmodifiable");
         }
 
+        // Projection errors retain the cause and identify the field and model key.
+        // Ошибки извлечения сохраняют причину и указывают поле и ключ модели.
         var broken = ModelDiffer.<Column, String>of(
             Column::key, Comparator.naturalOrder(),
             List.of(Field.of("broken", column -> {

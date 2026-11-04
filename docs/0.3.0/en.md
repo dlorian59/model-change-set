@@ -8,17 +8,25 @@
 
 Compare keyed model snapshots with explicit field policies. Receive deterministic additions, removals, and modifications, or merge sorted inputs one change at a time.
 
+## Practical scenario: approve a configuration update
+
+Compare deployed worker settings with a proposed version before a rollout. Ignore
+observation timestamps, show additions/removals and explain changed limits. The
+[Spring integration](spring.en.md) covers setup, typed beans, commented source,
+expected output and consistency limits; run it with `./gradlew runSpringExample`.
+The core examples below also show how the same mechanism reviews schema snapshots.
+
 ## Capabilities at a glance
 
 | Capability | Use case | Example |
 | --- | --- | --- |
-| 1. Install and prepare the example | Use a complete JDK 17 or newer. Supported runtimes are LTS 17, 21, 25 and non-LTS 27. The library has no runtime dependencies. | [Code and result](#1-install-and-prepare-the-example) |
-| 2. Compare snapshots and control ordering | Choose a stable key, a total key comparator, and the fields that define a meaningful change. Input collections can arrive in any order. | [Code and result](#2-compare-snapshots-and-control-ordering) |
-| 3. Define equality and handle nulls | Field.of uses Objects.deepEquals: it supports nulls and array contents; other values use their own equals method. Field.comparing lets the domain decide what counts as equal. | [Code and result](#3-define-equality-and-handle-nulls) |
-| 4. Filter results and compare membership | Use added, removed, modified, and isEmpty to choose the next application action. An empty field list compares identities only; an explicit subset ignores irrelevant fields. | [Code and result](#4-filter-results-and-compare-membership) |
-| 5. Merge sorted sources incrementally | compareSorted accepts two iterators whose keys are strictly increasing under the same comparator, then calls a synchronous consumer for each change. It does not index both snapshots. | [Code and result](#5-merge-sorted-sources-incrementally) |
-| 6. Validate identities and understand limits | Duplicate keys and ambiguous comparators fail explicitly. The comparison direction and change shape remain visible in every result. | [Code and result](#6-validate-identities-and-understand-limits) |
-| 7. Run the complete example and diagnose failures | Download Example.java and save it at the repository root after building version 0.3.0. The following POSIX-shell commands use the ordinary jar, not the sources or Javadoc jar. | [Code and result](#7-run-the-complete-example-and-diagnose-failures) |
+| 1. Install and prepare the example | Use a complete JDK 17 or newer. Supported runtimes are LTS 17, 21, 25 and non-LTS 27. The library has no runtime dependencies. | [Code and result](#1-install-and-prepare-the-example) · [Source](examples/Example.java) |
+| 2. Compare snapshots and control ordering | Choose a stable key, a total key comparator, and the fields that define a meaningful change. Input collections can arrive in any order. | [Code and result](#2-compare-snapshots-and-control-ordering) · [Source](examples/Example.java) |
+| 3. Define equality and handle nulls | Field.of uses Objects.deepEquals: it supports nulls and array contents; other values use their own equals method. Field.comparing lets the domain decide what counts as equal. | [Code and result](#3-define-equality-and-handle-nulls) · [Source](examples/Example.java) |
+| 4. Filter results and compare membership | Use added, removed, modified, and isEmpty to choose the next application action. An empty field list compares identities only; an explicit subset ignores irrelevant fields. | [Code and result](#4-filter-results-and-compare-membership) · [Source](examples/Example.java) |
+| 5. Merge sorted sources incrementally | compareSorted accepts two iterators whose keys are strictly increasing under the same comparator, then calls a synchronous consumer for each change. It does not index both snapshots. | [Code and result](#5-merge-sorted-sources-incrementally) · [Source](examples/Example.java) |
+| 6. Validate identities and understand limits | Duplicate keys and ambiguous comparators fail explicitly. The comparison direction and change shape remain visible in every result. | [Code and result](#6-validate-identities-and-understand-limits) · [Source](examples/Example.java) |
+| 7. Run the complete example and diagnose failures | Run the included Example.java against the locally built library JAR from the checkout root. | [Code and result](#7-run-the-complete-example-and-diagnose-failures) · [Source](examples/Example.java) |
 
 ## 1. Install and prepare the example
 
@@ -63,6 +71,7 @@ import java.util.Comparator;
 import java.util.List;
 
 // Declare this record inside your Example class.
+// Объявите эту запись внутри класса Example.
 record Column(String key, String type, boolean nullable) {}
 ```
 
