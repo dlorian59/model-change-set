@@ -39,7 +39,7 @@ Use a complete JDK 17 or newer. Supported runtimes are LTS 17, 21, 25 and non-LT
 > The commands below build the source and install version 0.3.0 in your local Maven repository. These coordinates do not imply that an artifact is available from Maven Central.
 
 ```bash
-git clone https://github.com/59Alex/model-change-set.git
+git clone https://github.com/dlorian59/model-change-set.git
 cd model-change-set
 ./gradlew build publishToMavenLocal -PtestJavaVersion=17
 ```

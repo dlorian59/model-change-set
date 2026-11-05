@@ -57,7 +57,7 @@ publishing {
             pom {
                 name.set("model-change-set")
                 description.set("Deterministic, field-aware change sets for keyed Java models")
-                url.set("https://github.com/59Alex/model-change-set")
+                url.set("https://github.com/dlorian59/model-change-set")
                 licenses {
                     license {
                         name.set("MIT License")
@@ -65,11 +65,11 @@ publishing {
                     }
                 }
                 developers {
-                    developer { id.set("59Alex"); name.set("Aleksandr Kashevarov") }
+                    developer { id.set("dlorian59"); name.set("Aleksandr Kashevarov") }
                 }
                 scm {
-                    url.set("https://github.com/59Alex/model-change-set")
-                    connection.set("scm:git:https://github.com/59Alex/model-change-set.git")
+                    url.set("https://github.com/dlorian59/model-change-set")
+                    connection.set("scm:git:https://github.com/dlorian59/model-change-set.git")
                 }
             }
         }

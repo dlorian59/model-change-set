@@ -40,7 +40,7 @@
 > Команды ниже собирают исходники и устанавливают версию 0.3.0 в локальный Maven-репозиторий. Наличие координат не означает, что артефакт опубликован в Maven Central.
 
 ```bash
-git clone https://github.com/59Alex/model-change-set.git
+git clone https://github.com/dlorian59/model-change-set.git
 cd model-change-set
 ./gradlew build publishToMavenLocal -PtestJavaVersion=17
 ```

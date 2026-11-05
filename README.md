@@ -10,7 +10,7 @@
 
 [**Complete API, configuration and error reference →**](docs/0.3.0/reference.en.md)
 
-[![CI](https://github.com/59Alex/model-change-set/actions/workflows/ci.yml/badge.svg)](https://github.com/59Alex/model-change-set/actions/workflows/ci.yml)
+[![CI](https://github.com/dlorian59/model-change-set/actions/workflows/ci.yml/badge.svg)](https://github.com/dlorian59/model-change-set/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-64748b.svg)](LICENSE)
 
 **Turn two model snapshots into a deterministic, field-aware change set.**
@@ -35,7 +35,7 @@ current and desired worker settings, and inspect changes before applying them. R
 With a full JDK 17, 21, 25, or 27 installed:
 
 ```sh
-git clone https://github.com/59Alex/model-change-set.git
+git clone https://github.com/dlorian59/model-change-set.git
 cd model-change-set
 ./gradlew runExample
 ```
@@ -227,7 +227,7 @@ trade-offs. Contributions should include a regression test for any changed contr
 Понадобится полный JDK 17, 21, 25 или 27; внешние сервисы не нужны.
 
 ```sh
-git clone https://github.com/59Alex/model-change-set.git
+git clone https://github.com/dlorian59/model-change-set.git
 cd model-change-set
 ./gradlew runExample
 ```
