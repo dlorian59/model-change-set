@@ -1,6 +1,6 @@
 # model-change-set 0.3.0 — Complete API and behavior reference
 
-[← Usage guide](en.md) · [Versions](../index.md) · [README](../../README.md) · [Русский](reference.ru.md)
+[← Usage guide](catalog.en.md) · [Versions](../index.md) · [README](../../README.md) · [Русский](reference.ru.md)
 
 This reference covers every public library type and operation. Start with the [runnable full example](examples/Example.java) or the [Spring configuration scenario](spring.en.md); the tables distinguish computed results from manually constructed data containers.
 
@@ -8,6 +8,11 @@ This reference covers every public library type and operation. Start with the [r
 
 | API and source | Usage in a model-comparison flow | Contract and edge cases |
 | --- | --- | --- |
+| [ModelDiffer.keyedBy(key), keyedBy(key, order)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `ModelDiffer.keyedBy(Product::sku)` | Starts a builder with natural key order or an explicit comparator. Null key function/order rejected. Natural order must agree with equals. [Catalog service](../../examples/catalog-preview/src/main/java/example/catalog/ProductCatalogService.java). |
+| [ModelDiffer.Builder.field(name, getter), field(name, getter, equivalent), build()](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `.field("name", Product::name).build()` | Mutable setup, not thread-safe; build snapshots fields and rejects duplicate names. No fields means membership only. Default equality is deepEquals; explicit policies receive nulls unchanged. Reuses of/compare/compareSorted without changing their contracts. [Walkthrough](catalog.en.md). |
+| [FieldEquivalence.decimalValue()](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `.field("price", Product::price, FieldEquivalence.decimalValue())` | BigDecimal numerical equality, ignores scale; no rounding/currency conversion. Null matches only null; original values retained. [Complete example](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
+| [FieldEquivalence.ignoringCase()](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `.field("name", Product::name, FieldEquivalence.ignoringCase())` | String.equalsIgnoreCase; no trimming, locale collation or Unicode normalization. Null differs from empty text. [Complete example](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
+| [FieldEquivalence.nullSafe(predicate)](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `FieldEquivalence.nullSafe((String a, String b) -> a.strip().equals(b.strip()))` | Calls the non-null predicate only when both values are present; two nulls match. Does not rewrite data or swallow predicate failures. [Complete example](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
 | [ModelDiffer.of(key, order, fields)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `ModelDiffer.<Column,String>of(Column::key, Comparator.naturalOrder(), fields)` | Stable non-null keys; total comparator consistent with equals; unique nonblank field names. Configuration is copied. No field discovery. |
 | [ModelDiffer.compare(before, after)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `var changes = differ.compare(before, after)` | Finite Iterables in any order; indexes both once before comparing fields. Empty snapshots are valid; an empty field list compares membership only. |
 | [ModelDiffer.compareSorted(before, after, consumer)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `differ.compareSorted(sortedBefore, sortedAfter, emitted::add)` | Strictly increasing under the configured comparator. Synchronous callbacks, one current entry per input; no background work or automatic closing. Late errors can leave a prefix. |
@@ -82,4 +87,4 @@ From a checkout on a full JDK 17+ (or select an installed JDK with `-PtestJavaVe
 
 The [existing contract tests](../../src/test/java/io/github/alex59/modelchanges/ModelDifferTest.java) cover duplicates, collisions, ordering, nulls, immutable containers, shape validation and incremental failures. Run the complete plain-Java guide with the [documented commands](en.md#7-run-the-complete-example-and-diagnose-failures). For dependency resolution, JDK setup and earlier incompatible releases, see [troubleshooting](en.md#7-run-the-complete-example-and-diagnose-failures) and [Java/version matrix](java.en.md).
 
-[← Usage guide](en.md)
+[← Usage guide](catalog.en.md)

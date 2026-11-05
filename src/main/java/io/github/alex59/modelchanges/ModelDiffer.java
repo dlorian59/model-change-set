@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 /**
@@ -53,6 +54,95 @@ public final class ModelDiffer<T, K> {
     public static <T, K> ModelDiffer<T, K> of(Function<? super T, ? extends K> key,
             Comparator<? super K> order, List<Field<T, ?>> fields) {
         return new ModelDiffer<>(key, order, fields);
+    }
+
+    /**
+     * Starts a definition using the key's natural order. No fields are discovered
+     * implicitly; a builder with no fields compares membership only.
+     * <p>Начинает настройку с естественным порядком ключей. Поля выбираются явно;
+     * без полей сравнивается только состав.</p>
+     * @param key stable, non-null key projection
+     * @param <T> model type
+     * @param <K> comparable key type; natural order must be consistent with equals
+     * @return mutable definition builder, intended for single-threaded setup
+     */
+    public static <T, K extends Comparable<? super K>> Builder<T, K> keyedBy(
+            Function<? super T, ? extends K> key) {
+        return keyedBy(key, Comparator.naturalOrder());
+    }
+
+    /**
+     * Starts a definition with an explicit key order.
+     * <p>Начинает настройку с явно заданным порядком ключей.</p>
+     * @param key stable, non-null key projection
+     * @param order total key order consistent with equals
+     * @param <T> model type
+     * @param <K> key type
+     * @return mutable definition builder, intended for single-threaded setup
+     */
+    public static <T, K> Builder<T, K> keyedBy(Function<? super T, ? extends K> key,
+                                             Comparator<? super K> order) {
+        return new Builder<>(key, order);
+    }
+
+    /**
+     * Collects explicitly selected business fields in report order. The builder
+     * is not thread-safe; each build snapshots its definition into an immutable
+     * differ. Later additions do not alter previously built differs.
+     * <p>Собирает бизнес-поля в порядке отчёта. Построитель не потокобезопасен;
+     * build фиксирует независимый неизменяемый набор настроек.</p>
+     * @param <T> model type
+     * @param <K> stable key type
+     */
+    public static final class Builder<T, K> {
+        private final Function<? super T, ? extends K> key;
+        private final Comparator<? super K> order;
+        private final List<Field<T, ?>> fields = new ArrayList<>();
+
+        private Builder(Function<? super T, ? extends K> key, Comparator<? super K> order) {
+            this.key = Objects.requireNonNull(key, "key");
+            this.order = Objects.requireNonNull(order, "order");
+        }
+
+        /**
+         * Selects a field with the default null-safe deep equality policy.
+         * <p>Выбирает поле с обычным глубоким равенством и обработкой null.</p>
+         * @param name nonblank name, unique within this definition
+         * @param extractor value projection
+         * @param <V> field type
+         * @return this builder
+         */
+        public <V> Builder<T, K> field(String name, Function<? super T, ? extends V> extractor) {
+            fields.add(Field.of(name, extractor));
+            return this;
+        }
+
+        /**
+         * Selects a field with explicit equivalence. Custom policies receive nulls
+         * unchanged; {@link FieldEquivalence} provides common null-safe choices.
+         * <p>Выбирает поле и правило равенства. Null передаётся правилу без изменений;
+         * готовые правила FieldEquivalence умеют обрабатывать null.</p>
+         * @param name nonblank name, unique within this definition
+         * @param extractor value projection
+         * @param equivalent true when values should be treated as equal
+         * @param <V> field type
+         * @return this builder
+         */
+        public <V> Builder<T, K> field(String name, Function<? super T, ? extends V> extractor,
+                                      BiPredicate<? super V, ? super V> equivalent) {
+            fields.add(Field.comparing(name, extractor, equivalent));
+            return this;
+        }
+
+        /**
+         * Creates an immutable definition using the existing comparison engine.
+         * <p>Создаёт неизменяемое определение для прежнего алгоритма сравнения.</p>
+         * @return differ; an empty field selection compares only membership
+         * @throws IllegalArgumentException if field names are duplicated
+         */
+        public ModelDiffer<T, K> build() {
+            return ModelDiffer.of(key, order, fields);
+        }
     }
 
     /**

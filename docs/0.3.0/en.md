@@ -1,4 +1,6 @@
-# model-change-set 0.3.0 — usage guide
+# model-change-set 0.3.0 — detailed comparison modes
+
+New to the library? Start with the [catalog service walkthrough](catalog.en.md): dependency, existing model, ready service and report. This page keeps the explicit field-definition API and advanced comparison modes.
 
 [← Back to documentation and versions / Назад к документации и версиям](../index.md)
 

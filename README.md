@@ -3,316 +3,318 @@
 <details name="readme-language">
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-en-dark.svg"><img src="assets/lang-en-light.svg" width="42" height="26" alt="EN"></picture></summary>
 
-**Library version:** [0.3.0](docs/0.3.0/en.md) · [All versions](docs/index.md)<br>
-**Java:** [17](docs/0.3.0/java.en.md#java-17) · [21](docs/0.3.0/java.en.md#java-21) · [25](docs/0.3.0/java.en.md#java-25) · [27](docs/0.3.0/java.en.md#java-27)
+**Version:** [0.3.0 guide](docs/0.3.0/catalog.en.md) · [Versions](docs/index.md) · [API reference](docs/0.3.0/reference.en.md)
 
-[**Usage guide: capabilities, examples and expected results →**](docs/0.3.0/en.md)
+Compare two versions of a product catalog, configuration inventory or other Java
+model collection. Receive additions, removals and changed fields with their old
+and new values, always in a stable key order. Choose the business fields once;
+import timestamps and other technical details stay out of the report.
 
-[**Complete API, configuration and error reference →**](docs/0.3.0/reference.en.md)
+Use it to preview supplier imports, explain configuration updates before approval,
+or prepare an audit report. It reads the models you supply and performs no writes.
+Java 17+, no runtime dependencies or Spring requirement. [Java support](docs/JAVA-SUPPORT.md).
 
-[![CI](https://github.com/dlorian59/model-change-set/actions/workflows/ci.yml/badge.svg)](https://github.com/dlorian59/model-change-set/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-64748b.svg)](LICENSE)
+## Get started in your application
 
-**Turn two model snapshots into a deterministic, field-aware change set.**
+Add the dependency to an existing Java project. These coordinates currently refer
+to a locally supplied artifact; a Maven Central release is not available.
+[Local artifact preparation and development](CONTRIBUTING.md) are separate from
+application integration.
 
-Compare schema catalogs, metadata definitions, configuration inventories, or API
-models by stable identity. Choose the fields that matter and their equivalence
-rules; get ordered additions, removals, and modifications with before/after values.
+Maven — inside dependencies:
 
-Java 17+. Supported LTS runtimes: **17, 21, and 25**; **Java 27** is also supported
-as a non-LTS runtime. No runtime dependencies, reflection, annotations, or framework
-setup. Version 0.3.0 uses the Java 17 API and bytecode baseline; see
-[Java support and migration](docs/JAVA-SUPPORT.md).
-
-## Spring: review a configuration rollout
-
-[Practical guide](docs/0.3.0/spring.en.md): register a typed `ModelDiffer` bean, compare
-current and desired worker settings, and inspect changes before applying them. Run
-`./gradlew runSpringExample`. Spring belongs only to the example; the core stays independent.
-
-## Try it
-
-With a full JDK 17, 21, 25, or 27 installed:
-
-```sh
-git clone https://github.com/dlorian59/model-change-set.git
-cd model-change-set
-./gradlew runExample
+```xml
+<dependency>
+  <groupId>io.github.59alex</groupId>
+  <artifactId>model-change-set</artifactId>
+  <version>0.3.0</version>
+</dependency>
 ```
 
-## Compare two snapshots
-
-The snippet below belongs in a method body after the imports. The complete runnable
-example is included in the repository and runs with the command above.
-
-```java
-import io.github.alex59.modelchanges.Field;
-import io.github.alex59.modelchanges.ModelDiffer;
-import java.util.Comparator;
-import java.util.List;
-
-record Column(String qualifiedName, String type, boolean nullable) {}
-
-var differ = ModelDiffer.<Column, String>of(
-    Column::qualifiedName,
-    Comparator.naturalOrder(),
-    List.of(Field.of("type", Column::type), Field.of("nullable", Column::nullable))
-);
-
-var before = List.of(
-    new Column("orders.id", "bigint", false),
-    new Column("orders.note", "text", true),
-    new Column("orders.legacy", "text", true)
-);
-var after = List.of(
-    new Column("orders.id", "bigint", false),
-    new Column("orders.note", "text", false),
-    new Column("orders.created_at", "timestamp", false)
-);
-
-var changes = differ.compare(before, after);
-changes.changes().forEach(change -> {
-    System.out.println(change.type() + " " + change.key());
-    change.fields().forEach(field -> System.out.println(
-        "  " + field.name() + ": " + field.before() + " -> " + field.after()
-    ));
-});
-```
-
-```text
-ADDED orders.created_at
-REMOVED orders.legacy
-MODIFIED orders.note
-  nullable: true -> false
-```
-
-Run the complete [example](src/examples/java/io/github/alex59/modelchanges/examples/SchemaDiff.java):
-
-```sh
-./gradlew runExample
-```
-
-`changes.added()`, `changes.removed()`, and `changes.modified()` return immutable
-filtered lists. `changes.isEmpty()` is useful for a CI check or a conditional refresh.
-An empty field definition list compares membership only.
-
-The returned lists retain key order and support the standard Java 17 `List` API.
-Their iterators are unmodifiable as well. Traversing a report backwards changes
-only traversal order, not the before/after direction of the changes.
-
-## Decide what “equal” means
-
-Fields use `Objects.deepEquals` by default: nulls and arrays are supported; other
-objects use their own `equals`. A custom policy can ignore insignificant formatting
-or numeric scale without rewriting the values included in the report:
-
-```java
-record Price(String key, java.math.BigDecimal amount) {}
-
-var amount = Field.<Price, java.math.BigDecimal>comparing(
-    "amount", Price::amount,
-    (a, b) -> a == null ? b == null : b != null && a.compareTo(b) == 0
-);
-```
-
-This treats `1.0` and `1.00` as equal. Custom policies receive nulls unchanged and
-must define their own null semantics. Omit timestamps and other technical fields
-from the definition when they should not affect the change set.
-
-## Process sorted inputs without indexing both snapshots
-
-If the caller can provide both snapshots in strictly increasing key order:
-
-```java
-differ.compareSorted(beforeIterator, afterIterator, change -> writeReportRow(change));
-```
-
-The synchronous merge retains one current model from each iterator and one change.
-It reads both inputs once, emits in key order, and stops immediately if the consumer
-throws. Iterators and underlying database cursors remain the caller's responsibility
-to close. This API does not read a database or manage transactions.
-
-Validation happens as entries arrive. A late duplicate, out-of-order key, extractor
-failure, or consumer failure can leave an already emitted prefix. Use `compare`
-when the caller must receive either one complete result or an exception. Neither
-method makes side effects in user callbacks transactional.
-
-## Contracts
-
-| Concern | Behavior |
-| --- | --- |
-| Direction | `compare(before, after)`; an identity change is removal plus addition |
-| Identity | Non-null stable key; comparator must define a total order consistent with `equals` |
-| Duplicates | Rejected in either snapshot, even if the models are equal |
-| Comparator collisions | Comparator-equivalent but unequal keys are rejected, including across snapshots |
-| Model values | Null models are rejected; null projected field values are allowed |
-| Null vs missing | A null field is a value; an absent model is an addition/removal |
-| Order | Changes follow key order; changed fields follow definition order |
-| Added/removed fields | Empty list; the whole model is available in `after`/`before` |
-| Mutability | Result containers are immutable; models, keys, and field values are not deep-copied |
-| Concurrency | Differ has no per-call mutable shared state; supplied functions and data must be safe to share |
-| Failures | Invalid inputs throw; field failures include field/key context and retain the cause |
-
-For `n` old models, `m` new models, and `f` configured fields:
-
-- `compare`: `O(n log n + m log m + min(n,m) × f)` work, plus result construction;
-  `O(n + m + result size)` memory.
-- `compareSorted`: `O(n + m + min(n,m) × f)` work and `O(f)` working memory,
-  excluding model sizes and any storage retained by the consumer.
-
-These bounds assume constant-cost key comparison, field extraction and equality.
-Use immutable snapshots and pure callbacks. The library does not infer renames,
-traverse arbitrary object graphs, classify backward compatibility, apply migrations,
-or persist an audit log. A schema change report is evidence for a decision, not an
-automatic declaration that a database migration is safe.
-
-## Build and use locally
-
-The repository builds a Java library with source and Javadoc jars. To install its
-artifact into your local Maven repository:
-
-```sh
-./gradlew build publishToMavenLocal
-```
-
-Then, in a consuming Gradle project:
+Gradle Kotlin DSL:
 
 ```kotlin
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
+repositories { mavenLocal(); mavenCentral() }
 dependencies {
     implementation("io.github.59alex:model-change-set:0.3.0")
 }
 ```
 
-The command above installs locally; it does not publish to Maven Central. CI tests
-the supported LTS runtimes Java 17, 21, and 25 plus the non-LTS Java 27 runtime,
-builds the source/Javadoc artifacts, and runs the schema example. A complete JDK
-is required to build. Use `-PtestJavaVersion=17`, `21`, `25`, or `27` to select the
-compiler and runtime; compilation always uses `--release 17`. Preview flags are
-not required.
+In your existing source tree:
 
-See [architecture and failure behavior](docs/ARCHITECTURE.md) for the design and
-trade-offs. Contributions should include a regression test for any changed contract.
+```text
+src/main/java/example/catalog/
+├── Product.java
+└── ProductCatalogService.java
+```
 
-## License
+Product.java — use your existing business model instead if you already have one:
 
-[MIT](LICENSE). The Gradle wrapper retains its upstream Apache 2.0 notices.
+```java
+package example.catalog;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+
+// The SKU identifies a product; importedAt is metadata, not a catalog change.
+public record Product(String sku, String name, BigDecimal price, Instant importedAt) { }
+```
+
+ProductCatalogService.java — ready to call from your application service or controller:
+
+```java
+package example.catalog;
+
+import io.github.alex59.modelchanges.ChangeSet;
+import io.github.alex59.modelchanges.FieldEquivalence;
+import io.github.alex59.modelchanges.ModelDiffer;
+
+// Configure once and reuse; only the business key and relevant fields are selected.
+public final class ProductCatalogService {
+    private final ModelDiffer<Product, String> differ = ModelDiffer.keyedBy(Product::sku)
+            .field("name", Product::name)
+            .field("price", Product::price, FieldEquivalence.decimalValue())
+            .build();
+
+    // Preview a supplier import before approval; this method does not change either snapshot.
+    public ChangeSet<Product, String> preview(Iterable<Product> current, Iterable<Product> incoming) {
+        return differ.compare(current, incoming);
+    }
+}
+```
+
+Call `new ProductCatalogService().preview(current, incoming)` with two product
+collections. The result contains only meaningful differences: a price changing
+from 2.00 to 2.50 is reported; 10.0 versus 10.00 and changed import timestamps are
+ignored. Inputs may arrive in any order; the report is sorted by SKU.
+
+[Complete runnable catalog example](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) ·
+[Step-by-step walkthrough and result](docs/0.3.0/catalog.en.md) ·
+[Spring configuration example](docs/0.3.0/spring.en.md)
+
+## What you can do
+
+Each snippet below uses Product and the library imports shown above; `report` is
+the result of the service call. Complete imports and assertions are in
+[CatalogPreview.java](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java).
+
+**Select business fields.** The key defaults to natural order; only selected fields matter.
+
+```java
+var differ = ModelDiffer.keyedBy(Product::sku)
+    .field("name", Product::name)
+    .field("price", Product::price, FieldEquivalence.decimalValue()).build();
+```
+
+Result: changes are ordered by SKU, changed fields by declaration order.
+[Service source](examples/catalog-preview/src/main/java/example/catalog/ProductCatalogService.java) · [Explanation](docs/0.3.0/catalog.en.md#select-only-the-fields-that-matter).
+
+**Use ready equivalence rules.** Case folding and decimal-scale tolerance are explicit choices.
+
+```java
+var names = ModelDiffer.keyedBy(Product::sku)
+    .field("name", Product::name, FieldEquivalence.ignoringCase()).build();
+```
+
+Result: Notebook and NOTEBOOK match, but null and an empty string differ.
+`FieldEquivalence.nullSafe(rule)` also wraps your own non-null comparison.
+[Source](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Rules and defaults](docs/0.3.0/catalog.en.md#equality-without-repetitive-null-checks).
+
+**Separate additions, removals and modifications.**
+
+```java
+var added = report.added();
+var removed = report.removed();
+var modified = report.modified();
+```
+
+Result: three unmodifiable lists in retained key order; each modification carries
+old/new field values. [Source](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Reading the report](docs/0.3.0/catalog.en.md#read-the-report-before-applying-changes).
+
+**Compare membership only.**
+
+```java
+var membership = ModelDiffer.keyedBy(Product::sku).build();
+```
+
+Result: only new and missing SKUs are reported; price/name differences are ignored.
+[Source](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Variants](docs/0.3.0/catalog.en.md#membership-and-custom-order).
+
+**Process already sorted sources one change at a time.**
+
+```java
+differ.compareSorted(sortedCurrent, sortedIncoming, change -> audit.accept(change));
+```
+
+Here the two inputs are iterators sorted by the same key order; audit is your
+Consumer of changes. A complete example uses a result collector and checks it
+against snapshot comparison. [Source](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Incremental mode and partial failures](docs/0.3.0/catalog.en.md#larger-sorted-sources).
+
+Duplicate/null keys and inconsistent key ordering are rejected. Comparison is a
+preview, not conflict resolution or a database transaction; the application owns
+consistent reads, authorization and applying approved changes. An incremental
+comparison can deliver a prefix before a later error. [Full contracts](docs/0.3.0/reference.en.md).
+
+[Guide](docs/0.3.0/catalog.en.md) · [MIT](LICENSE)
 
 </details>
 
 <details name="readme-language" open>
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-ru-dark.svg"><img src="assets/lang-ru-light.svg" width="42" height="26" alt="RU"></picture></summary>
 
-**Версия библиотеки:** [0.3.0](docs/0.3.0/ru.md) · [Все версии](docs/index.md)<br>
-**Java:** [17](docs/0.3.0/java.ru.md#java-17) · [21](docs/0.3.0/java.ru.md#java-21) · [25](docs/0.3.0/java.ru.md#java-25) · [27](docs/0.3.0/java.ru.md#java-27)
+**Версия:** [Руководство 0.3.0](docs/0.3.0/catalog.ru.md) · [Все версии](docs/index.md) · [Справочник API](docs/0.3.0/reference.ru.md)
 
-[**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
+Сравнивайте две версии каталога товаров, набора настроек или других Java-моделей.
+Получайте добавления, удаления и изменения полей с прежними и новыми значениями
+в стабильном порядке ключей. Один раз укажите значимые бизнес-поля; время импорта
+и другие технические сведения не будут засорять отчёт.
 
-[**Полный справочник API, настроек и ошибок →**](docs/0.3.0/reference.ru.md)
+Библиотека подходит для предпросмотра импорта поставщика, согласования настроек
+перед применением и подготовки отчёта аудита. Она читает переданные модели и
+ничего не записывает. Java 17+, без зависимостей времени выполнения и без
+обязательного Spring. [Совместимость с Java](docs/JAVA-SUPPORT.md).
 
-Сравнивайте снимки моделей по стабильному ключу и явно заданным правилам полей. Получайте упорядоченные добавления, удаления и изменения либо обрабатывайте отсортированные источники по одному изменению.
+## Подключение к существующему приложению
 
-## Spring: проверка обновления конфигурации
+Добавьте зависимость в Java-проект. Сейчас по этим координатам используется
+локально предоставленный артефакт; релиза в Maven Central пока нет.
+[Подготовка локального артефакта и разработка](CONTRIBUTING.md) вынесены отдельно.
 
-[Практическое руководство](docs/0.3.0/spring.ru.md): создайте типизированный bean
-`ModelDiffer`, сравните текущие и желаемые настройки обработчиков и изучите изменения
-перед применением. Запуск: `./gradlew runSpringExample`. Spring подключён только
-к примеру; основная библиотека сохраняет независимость.
+Maven — внутри dependencies:
 
-## Попробовать
-
-Понадобится полный JDK 17, 21, 25 или 27; внешние сервисы не нужны.
-
-```sh
-git clone https://github.com/dlorian59/model-change-set.git
-cd model-change-set
-./gradlew runExample
+```xml
+<dependency>
+  <groupId>io.github.59alex</groupId>
+  <artifactId>model-change-set</artifactId>
+  <version>0.3.0</version>
+</dependency>
 ```
 
-[Полный пример](src/examples/java/io/github/alex59/modelchanges/examples/SchemaDiff.java)
-сравнивает две версии схемы и печатает:
-
-```text
-ADDED orders.created_at
-REMOVED orders.legacy
-MODIFIED orders.note
-  nullable: true -> false
-```
-
-Ключ определяет одну и ту же модель в обоих снимках; список полей — какие значения
-участвуют в сравнении. Например, следующий фрагмент помещается в тело метода после импортов:
-
-```java
-import io.github.alex59.modelchanges.Field;
-import io.github.alex59.modelchanges.ModelDiffer;
-import java.util.Comparator;
-import java.util.List;
-
-record Column(String key, String type) {}
-var differ = ModelDiffer.<Column, String>of(
-    Column::key, Comparator.naturalOrder(), List.of(Field.of("type", Column::type)));
-var changes = differ.compare(
-    List.of(new Column("orders.id", "int")),
-    List.of(new Column("orders.id", "bigint")));
-System.out.println(changes.modified().get(0).fields().get(0).after()); // bigint
-```
-
-## Что важно для интеграции
-
-- `compare(before, after)` принимает конечные снимки в любом порядке и возвращает
-  добавления, удаления и изменения, отсортированные по ключу.
-- `Field.of` использует `Objects.deepEquals`, включая массивы и `null`.
-  `Field.comparing` задаёт собственное правило равенства, в том числе обработку `null`.
-- `compareSorted` последовательно читает два строго отсортированных итератора и
-  синхронно передаёт изменения обработчику. Поздняя ошибка может оставить уже
-  обработанную часть; закрытие курсоров и откат побочных эффектов выполняет приложение.
-- Дубликаты ключей, `null` вместо модели или ключа и коллизии компаратора отклоняются.
-  Ключи должны быть стабильными, а порядок — согласованным с `equals`.
-- Коллекции результата неизменяемы; ключи, модели и значения полей сохраняются по
-  ссылке. Используйте неизменяемые снимки и безопасные для совместного доступа функции.
-- Библиотека сравнивает явно описанные данные: не определяет переименования, не
-  выполняет миграции и не объявляет их автоматически безопасными.
-
-## Возможности
-
-| Возможность | Пример и объяснение |
-| --- | --- |
-| 1. Установка и подготовка примера | [Открыть](docs/0.3.0/ru.md#1-установка-и-подготовка-примера) |
-| 2. Сравнение снимков и порядок результата | [Открыть](docs/0.3.0/ru.md#2-сравнение-снимков-и-порядок-результата) |
-| 3. Правила равенства и null | [Открыть](docs/0.3.0/ru.md#3-правила-равенства-и-null) |
-| 4. Фильтры результата и сравнение состава | [Открыть](docs/0.3.0/ru.md#4-фильтры-результата-и-сравнение-состава) |
-| 5. Последовательное сравнение отсортированных источников | [Открыть](docs/0.3.0/ru.md#5-последовательное-сравнение-отсортированных-источников) |
-| 6. Проверка ключей и границы поведения | [Открыть](docs/0.3.0/ru.md#6-проверка-ключей-и-границы-поведения) |
-| 7. Запуск полного примера и диагностика | [Открыть](docs/0.3.0/ru.md#7-запуск-полного-примера-и-диагностика) |
-
-## Совместимость и установка
-
-Основной артефакт требует Java 17. Проверены JVM 17, 21, 25 и 27. Более новая JVM не повышает минимальную версию библиотеки.
-
-Специальных модулей с API Java 21/25/27 нет: библиотека использует базу Java 17.
-
-Установите артефакт из исходников в локальный Maven-репозиторий:
-
-```sh
-./gradlew build publishToMavenLocal
-```
-
-Подключите его в Gradle-проекте:
+Gradle Kotlin DSL:
 
 ```kotlin
 repositories { mavenLocal(); mavenCentral() }
-dependencies { implementation("io.github.59alex:model-change-set:0.3.0") }
+dependencies {
+    implementation("io.github.59alex:model-change-set:0.3.0")
+}
 ```
 
-Это локальная установка, а не публикация в Maven Central. Для выбора установленного
-JDK используйте `-PtestJavaVersion=17`, `21`, `25` или `27`; байткод всегда рассчитан
-на Java 17. Подробные сценарии с ожидаемым результатом доступны в таблице выше.
+Файлы в существующем приложении:
 
-## Лицензия
+```text
+src/main/java/example/catalog/
+├── Product.java
+└── ProductCatalogService.java
+```
 
-[MIT](LICENSE). Лицензии сторонних зависимостей сохраняются.
+Product.java — если бизнес-модель уже есть, используйте её:
+
+```java
+package example.catalog;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+
+// Артикул определяет товар; importedAt — метаданные, а не изменение каталога.
+public record Product(String sku, String name, BigDecimal price, Instant importedAt) { }
+```
+
+ProductCatalogService.java — готовый сервис для вызова из вашего приложения или контроллера:
+
+```java
+package example.catalog;
+
+import io.github.alex59.modelchanges.ChangeSet;
+import io.github.alex59.modelchanges.FieldEquivalence;
+import io.github.alex59.modelchanges.ModelDiffer;
+
+// Настраиваем один раз и используем повторно; выбираем только ключ и значимые поля.
+public final class ProductCatalogService {
+    private final ModelDiffer<Product, String> differ = ModelDiffer.keyedBy(Product::sku)
+            .field("name", Product::name)
+            .field("price", Product::price, FieldEquivalence.decimalValue())
+            .build();
+
+    // Предпросмотр импорта поставщика перед согласованием; оба снимка остаются неизменными.
+    public ChangeSet<Product, String> preview(Iterable<Product> current, Iterable<Product> incoming) {
+        return differ.compare(current, incoming);
+    }
+}
+```
+
+Вызовите `new ProductCatalogService().preview(current, incoming)` с двумя коллекциями
+товаров. Результат содержит только значимые отличия: изменение цены с 2.00 на 2.50
+попадёт в отчёт, а 10.0 вместо 10.00 и новое время импорта — нет. Входные данные
+могут идти в любом порядке; результат отсортирован по артикулу.
+
+[Полный запускаемый пример каталога](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) ·
+[Пошаговый разбор и результат](docs/0.3.0/catalog.ru.md) ·
+[Пример настроек со Spring](docs/0.3.0/spring.ru.md)
+
+## Возможности на примерах
+
+Фрагменты используют Product и импорты библиотеки выше; `report` — результат вызова
+сервиса. Полные импорты и проверки находятся в
+[CatalogPreview.java](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java).
+
+**Выбрать значимые поля.** Ключ по умолчанию имеет естественный порядок; остальные поля не сравниваются.
+
+```java
+var differ = ModelDiffer.keyedBy(Product::sku)
+    .field("name", Product::name)
+    .field("price", Product::price, FieldEquivalence.decimalValue()).build();
+```
+
+Результат: изменения идут по артикулу, поля — в порядке объявления.
+[Исходник сервиса](examples/catalog-preview/src/main/java/example/catalog/ProductCatalogService.java) · [Разбор](docs/0.3.0/catalog.ru.md#выбрать-только-значимые-поля).
+
+**Использовать готовые правила равенства.** Игнорирование регистра и масштаба десятичной дроби включается явно.
+
+```java
+var names = ModelDiffer.keyedBy(Product::sku)
+    .field("name", Product::name, FieldEquivalence.ignoringCase()).build();
+```
+
+Результат: Notebook и NOTEBOOK равны, но null отличается от пустой строки.
+`FieldEquivalence.nullSafe(rule)` также добавляет обработку null к вашему правилу.
+[Исходник](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Правила и значения по умолчанию](docs/0.3.0/catalog.ru.md#равенство-без-повторяющихся-проверок-null).
+
+**Разделить добавления, удаления и изменения.**
+
+```java
+var added = report.added();
+var removed = report.removed();
+var modified = report.modified();
+```
+
+Результат: три неизменяемых списка с сохранением порядка ключей; у каждого
+изменения есть прежние и новые значения полей.
+[Исходник](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Чтение отчёта](docs/0.3.0/catalog.ru.md#прочитать-отчёт-перед-применением).
+
+**Сравнить только состав.**
+
+```java
+var membership = ModelDiffer.keyedBy(Product::sku).build();
+```
+
+Результат: только новые и отсутствующие артикулы; цена и название не учитываются.
+[Исходник](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Варианты](docs/0.3.0/catalog.ru.md#состав-и-свой-порядок).
+
+**Читать отсортированные источники по одному изменению.**
+
+```java
+differ.compareSorted(sortedCurrent, sortedIncoming, change -> audit.accept(change));
+```
+
+Здесь входы — итераторы в одном порядке ключей, audit — ваш Consumer изменений.
+Полный пример собирает результат и сверяет его с обычным сравнением снимков.
+[Исходник](examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java) · [Последовательное чтение и частичные ошибки](docs/0.3.0/catalog.ru.md#большие-отсортированные-источники).
+
+Повторные/null-ключи и противоречивый порядок отклоняются. Это предпросмотр, а не
+разрешение конфликтов или транзакция БД: согласованные чтения, права доступа и
+применение одобренных изменений принадлежат приложению. Последовательное сравнение
+может выдать часть результата до поздней ошибки. [Полные контракты](docs/0.3.0/reference.ru.md).
+
+[Руководство](docs/0.3.0/catalog.ru.md) · [MIT](LICENSE)
 
 </details>

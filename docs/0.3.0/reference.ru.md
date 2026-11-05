@@ -1,6 +1,6 @@
 # model-change-set 0.3.0 — Полный справочник API и поведения
 
-[← Руководство](ru.md) · [Версии](../index.md) · [README](../../README.md) · [English](reference.en.md)
+[← Руководство](catalog.ru.md) · [Версии](../index.md) · [README](../../README.md) · [English](reference.en.md)
 
 Справочник охватывает все публичные типы и операции библиотеки. Начните с [полного запускаемого примера](examples/Example.java) или [сценария Spring](spring.ru.md); таблицы различают вычисленный результат и вручную созданные контейнеры данных.
 
@@ -8,6 +8,11 @@
 
 | API и исходник | Использование при сравнении моделей | Контракт и границы |
 | --- | --- | --- |
+| [ModelDiffer.keyedBy(key), keyedBy(key, order)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `ModelDiffer.keyedBy(Product::sku)` | Создаёт построитель с естественным или явным порядком ключей. Null вместо функции ключа/компаратора отклоняется. Естественный порядок должен совпадать с equals. [Сервис каталога](../../examples/catalog-preview/src/main/java/example/catalog/ProductCatalogService.java). |
+| [ModelDiffer.Builder.field(name, getter), field(name, getter, equivalent), build()](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `.field("name", Product::name).build()` | Изменяемая настройка без потокобезопасности; build фиксирует поля и отклоняет повторные имена. Без полей сравнивается состав. По умолчанию deepEquals; явные правила получают null без изменений. Использует прежние of/compare/compareSorted с теми же контрактами. [Разбор](catalog.ru.md). |
+| [FieldEquivalence.decimalValue()](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `.field("price", Product::price, FieldEquivalence.decimalValue())` | Числовое равенство BigDecimal без учёта масштаба; без округления/конвертации валют. Null равен только null, исходные значения сохраняются. [Полный пример](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
+| [FieldEquivalence.ignoringCase()](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `.field("name", Product::name, FieldEquivalence.ignoringCase())` | String.equalsIgnoreCase; без удаления пробелов, языковой сортировки и нормализации Unicode. Null отличается от пустой строки. [Полный пример](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
+| [FieldEquivalence.nullSafe(predicate)](../../src/main/java/io/github/alex59/modelchanges/FieldEquivalence.java) | `FieldEquivalence.nullSafe((String a, String b) -> a.strip().equals(b.strip()))` | Вызывает правило, только если оба значения не null; два null равны. Не преобразует данные и не скрывает ошибки правила. [Полный пример](../../examples/catalog-preview/src/main/java/example/catalog/CatalogPreview.java). |
 | [ModelDiffer.of(key, order, fields)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `ModelDiffer.<Column,String>of(Column::key, Comparator.naturalOrder(), fields)` | Стабильные ключи без null; полный порядок согласован с equals; уникальные непустые имена полей. Настройки копируются. Автопоиска полей нет. |
 | [ModelDiffer.compare(before, after)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `var changes = differ.compare(before, after)` | Конечные Iterable в любом порядке; оба индексируются по одному разу до сравнения полей. Пустые снимки допустимы; пустой набор полей сравнивает только состав. |
 | [ModelDiffer.compareSorted(before, after, consumer)](../../src/main/java/io/github/alex59/modelchanges/ModelDiffer.java) | `differ.compareSorted(sortedBefore, sortedAfter, emitted::add)` | Строго возрастающий порядок по заданному компаратору. Синхронные callbacks, один текущий элемент каждого входа; без фоновой работы и автоматического закрытия. Поздняя ошибка может оставить префикс. |
@@ -82,4 +87,4 @@ System.out.println(manual.added().stream().map(Change::key).toList()); // [z, a]
 
 [Существующие контрактные тесты](../../src/test/java/io/github/alex59/modelchanges/ModelDifferTest.java) проверяют дубликаты, коллизии, порядок, null, неизменяемые контейнеры, структуру и поздние ошибки. Полный обычный Java-пример запускается [командами руководства](ru.md#7-запуск-полного-примера-и-диагностика). Решение ошибок зависимостей, выбора JDK и несовместимых прежних версий: [диагностика](ru.md#7-запуск-полного-примера-и-диагностика), [матрица Java/версий](java.ru.md).
 
-[← Руководство](ru.md)
+[← Руководство](catalog.ru.md)

@@ -37,13 +37,9 @@ parallelism, timeout and observation time. The complete
 ```java
 package io.github.alex59.modelchanges.examples.spring;
 
-import io.github.alex59.modelchanges.Field;
 import io.github.alex59.modelchanges.ModelDiffer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Comparator;
-import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 public class PolicyConfiguration {
@@ -51,9 +47,10 @@ public class PolicyConfiguration {
     public ModelDiffer<WorkerPolicy, String> workerPolicyDiffer() {
         // Declare exactly what matters for a rollout; observedAt is deliberately omitted.
         // Явно задаём поля, влияющие на применение настроек; observedAt намеренно исключён.
-        return ModelDiffer.of(WorkerPolicy::key, Comparator.naturalOrder(), List.of(
-            Field.of("parallelism", WorkerPolicy::parallelism),
-            Field.of("timeout", WorkerPolicy::timeout)));
+        return ModelDiffer.keyedBy(WorkerPolicy::key)
+            .field("parallelism", WorkerPolicy::parallelism)
+            .field("timeout", WorkerPolicy::timeout)
+            .build();
     }
 
     @Bean

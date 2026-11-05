@@ -39,6 +39,15 @@ outside this boundary. The text diagram uses no external renderer.
 | `Change` / `FieldChange` | Represent one added, removed, or modified model and its values |
 | `ChangeSet` | Hold the complete immutable result and provide views by change type |
 
+`ModelDiffer.keyedBy(...).field(...).build()` is setup syntax over the same
+`ModelDiffer.of` definition. The mutable builder snapshots its fields at build;
+it does not add another comparison engine. `FieldEquivalence` supplies optional
+null-safe decimal/text rules without rewriting values or relaxing key identity.
+
+Настройка через keyedBy/field/build использует прежнее определение ModelDiffer.of.
+Построитель фиксирует список полей при build; отдельного алгоритма сравнения нет.
+FieldEquivalence упрощает равенство полей, не меняя данные и правила ключей.
+
 For `compare(before, after)`:
 
 1. Consume the old snapshot into a key-ordered index. Reject null models/keys,
